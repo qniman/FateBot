@@ -1,5 +1,26 @@
 node_modules/
 dist/
+
+# env и их примеры локально
 .env
-*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE / редакторы
+.vscode/
+.idea/
+*.code-workspace
+
+# ОС
 .DS_Store
+Thumbs.db
+
+# логи
+*.log
+
+# Cursor / план-файлы (если не должны быть в репо)
+.cursor/
+.cursordb/
+*.plan.md
