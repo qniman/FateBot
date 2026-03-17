@@ -1,0 +1,16 @@
+{
+  "channelIds": {
+    "rolesContract": "1460326157277855744",
+    "rulesContracts": "1465005377832747245",
+    "adminReview": "1482550306008203294",
+    "approvalTickets": "1482550306008203294",
+    "logs": "1441828073094778910"
+  },
+  "roleIds": {
+    "contractsPending": "1482550507259035760",
+    "contracts": "1460321059101212935"
+  },
+  "maxSkillLevel": 5,
+  "minSumForAutoApprove": 30,
+  "ocrConfidenceThreshold": 0.02
+}

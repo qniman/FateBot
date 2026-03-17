@@ -1,0 +1,16 @@
+{
+  "channelIds": {
+    "rolesContract": "ID канала где заявки (roles-contract)",
+    "rulesContracts": "ID канала с правилами (rules-contracts)",
+    "adminReview": "ID канала для ручной проверки (отказ OCR)",
+    "approvalTickets": "ID канала куда бот постит тикеты на одобрение",
+    "logs": "ID канала логов (выдача роли после ознакомления с правилами)"
+  },
+  "roleIds": {
+    "contractsPending": "Роль доступа к каналу правил (выдаётся после одобрения заявки)",
+    "contracts": "Роль «Контракты» (выдаётся после галочки на правилах)"
+  },
+  "maxSkillLevel": 5,
+  "minSumForAutoApprove": 30,
+  "ocrConfidenceThreshold": 0.85
+}
