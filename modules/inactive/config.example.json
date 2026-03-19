@@ -1,0 +1,5 @@
+{
+  "reportChannelId": "ID канала для отчётов по активности",
+  "reportIntervalHours": 24,
+  "guildId": "ID гильдии (опционально, по умолчанию из GUILD_ID бота)"
+}

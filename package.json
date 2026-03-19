@@ -24,6 +24,7 @@
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
     "sharp": "^0.34.5",
+    "sql.js": "^1.11.0",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {

@@ -20,6 +20,9 @@ Thumbs.db
 # логи
 *.log
 
+# SQLite (модуль inactive)
+*.db
+
 # Cursor / план-файлы (если не должны быть в репо)
 .cursor/
 .cursordb/
