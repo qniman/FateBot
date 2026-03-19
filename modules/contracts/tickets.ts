@@ -38,6 +38,40 @@ function getLabelsForStep(step: number): string[] {
   return MODAL_SKILL_LABELS.slice(start, start + 5) as string[];
 }
 
+function getPlaceholderByLabel(label: string): string {
+  const byLabel: Record<string, string> = {
+    'Номер паспорта': '1234567',
+    'Сила': '0-5',
+    'Стрельба': '0-10',
+    'Кулинария': '0-5',
+    'Рыболовство': '0-6',
+    'Охота': '0-5',
+    'Поиск сокровищ': '0-5',
+    'Фермерство': '0-5',
+    'Строитель': '0-5',
+    'Шахтер': '0-5',
+    'Шахтёр': '0-5',
+    'Грузчик': '0-5',
+    'Таксист': '0-5',
+    'Дайвер': '0-5',
+    'Инкассатор': '0-5',
+    'Водитель автобуса': '0-5',
+    'Механик': '0-5',
+    'Пожарный': '0-5',
+    'Дальнобойщик': '0-5',
+    'Курьер': '0-5',
+    'Подрядчик': '0-5',
+    'Почтальон': '0-5',
+    'Rednecks': '0-5',
+    'Car Meet': '0-5',
+    'Merryweather': '0-5',
+    'Marrywether': '0-5',
+    'Мотоклуб': '0-4',
+    'Наличие клуба Epsilon': 'Да / Нет',
+  };
+  return byLabel[label] ?? '0-5';
+}
+
 export function getFieldIdsForStep(step: number): string[] {
   if (step === 0) return [MODAL_FIELD_PASSPORT, ...Array.from({ length: 4 }, (_, i) => getFieldIdForSkillIndex(i))];
   if (step === 5) return [MODAL_FIELD_EPSILON];
@@ -290,6 +324,7 @@ export function buildModalForStep(step: number): ModalBuilder {
   const modal = new ModalBuilder().setCustomId(getModalStepId(step)).setTitle(title);
   for (let i = 0; i < labels.length; i++) {
     const isEpsilon = ids[i] === MODAL_FIELD_EPSILON;
+    const placeholder = getPlaceholderByLabel(labels[i]);
     const row = new ActionRowBuilder<TextInputBuilder>().addComponents(
       new TextInputBuilder()
         .setCustomId(ids[i])
@@ -297,7 +332,7 @@ export function buildModalForStep(step: number): ModalBuilder {
         .setStyle(TextInputStyle.Short)
         .setRequired(!isEpsilon)
         .setMaxLength(20)
-        .setPlaceholder(isEpsilon ? 'Да / Нет' : '0–10')
+        .setPlaceholder(placeholder)
     );
     modal.addComponents(row);
   }
