@@ -13,18 +13,26 @@ const module: IModule = {
   async register(context) {
     const cfg = loadInactiveConfig();
     const { client, logger, config } = context;
-    if (!cfg) {
-      logger.info('Inactive: config not found or reportChannelId empty, module disabled.');
-      return;
-    }
-    const activeCfg = cfg;
+    const activeCfg = {
+      reportChannelId: cfg?.reportChannelId?.trim() ?? '',
+      reportIntervalHours: cfg?.reportIntervalHours ?? 24,
+      guildId: cfg?.guildId,
+    };
 
     const guildId = activeCfg.guildId?.trim() || config.guildId || null;
     if (!guildId) {
       logger.warn('Inactive: guildId not set in config or bot config, tracking all guilds.');
     }
 
-    await initDb();
+    let dbReady = false;
+    try {
+      await initDb();
+      dbReady = true;
+    } catch (err) {
+      logger.error(
+        `Inactive: failed to initialize database, command will be unavailable: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
 
     function shouldTrack(guildIdFromEvent: string): boolean {
       if (!guildId) return true;
@@ -32,19 +40,20 @@ const module: IModule = {
     }
 
     client.on(Events.MessageCreate, (message) => {
-      if (message.author.bot) return;
+      if (!dbReady || message.author.bot) return;
       if (!shouldTrack(message.guildId ?? '')) return;
       insertEvent(message.guildId!, message.author.id, 'message');
     });
 
     client.on(Events.MessageReactionAdd, (reaction, user) => {
-      if (user.bot) return;
+      if (!dbReady || user.bot) return;
       const gid = reaction.message.guildId;
       if (!gid || !shouldTrack(gid)) return;
       insertEvent(gid, user.id, 'reaction');
     });
 
     client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+      if (!dbReady) return;
       const member = newState.member;
       if (!member?.user || member.user.bot) return;
       const gid = newState.guild.id;
@@ -92,12 +101,16 @@ const module: IModule = {
         .catch((err) => logger.error(`Inactive: send report failed: ${err}`));
     }
 
-    const intervalMs = activeCfg.reportIntervalHours * 60 * 60 * 1000;
-    let timer: ReturnType<typeof setInterval> | null = null;
-    client.once(Events.ClientReady, () => {
-      timer = setInterval(() => sendReport(), intervalMs);
-      logger.info(`Inactive: report scheduled every ${activeCfg.reportIntervalHours} h.`);
-    });
+    if (dbReady && activeCfg.reportChannelId) {
+      const intervalMs = activeCfg.reportIntervalHours * 60 * 60 * 1000;
+      let timer: ReturnType<typeof setInterval> | null = null;
+      client.once(Events.ClientReady, () => {
+        timer = setInterval(() => sendReport(), intervalMs);
+        logger.info(`Inactive: report scheduled every ${activeCfg.reportIntervalHours} h.`);
+      });
+    } else if (!activeCfg.reportChannelId) {
+      logger.warn('Inactive: reportChannelId is empty, periodic reports disabled.');
+    }
 
     context.registerSlashCommand(
       {
@@ -105,6 +118,13 @@ const module: IModule = {
         description: 'Вывести отчёт по активности (топ-3 активных и неактивных)',
       },
       async (interaction) => {
+        if (!dbReady) {
+          await interaction.reply({
+            content: 'Модуль инактива не инициализировался (БД недоступна). Проверьте логи бота.',
+            ephemeral: true,
+          });
+          return;
+        }
         const gid = interaction.guildId;
         if (!gid) {
           await interaction.reply({ content: 'Команда только для сервера.', ephemeral: true });
@@ -136,6 +156,39 @@ const module: IModule = {
           lines.push('_Нет данных за период._');
         }
         await interaction.editReply(lines.join('\n'));
+      }
+    );
+
+    context.registerSlashCommand(
+      {
+        name: 'inactive-status',
+        description: 'Показать статус модуля инактива',
+      },
+      async (interaction) => {
+        const targetGuildId = guildId || interaction.guildId || null;
+        const reportChannelSet = Boolean(activeCfg.reportChannelId?.trim());
+        const reportChannel = reportChannelSet
+          ? await client.channels.fetch(activeCfg.reportChannelId).catch(() => null)
+          : null;
+        const channelStatus = !reportChannelSet
+          ? 'не задан'
+          : reportChannel?.isTextBased()
+            ? `доступен (<#${activeCfg.reportChannelId}>)`
+            : 'не найден/недоступен';
+
+        const lines = [
+          '**Статус модуля "Инактив"**',
+          `- База данных: ${dbReady ? 'готова' : 'ошибка инициализации'}`,
+          `- Канал отчётов: ${channelStatus}`,
+          `- Интервал отчётов: ${activeCfg.reportIntervalHours} ч.`,
+          `- Отслеживаемая гильдия: ${targetGuildId ?? 'не задана (все доступные)'}`,
+          `- Сбор событий: ${dbReady ? 'включен' : 'выключен'}`,
+        ];
+
+        await interaction.reply({
+          content: lines.join('\n'),
+          ephemeral: true,
+        });
       }
     );
   },

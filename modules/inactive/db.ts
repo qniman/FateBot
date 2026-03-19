@@ -1,6 +1,7 @@
 import initSqlJs, { type Database } from 'sql.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import * as url from 'node:url';
 
 let db: Database | null = null;
 let dbPath: string = '';
@@ -34,8 +35,16 @@ function saveDb(): void {
 
 export async function initDb(): Promise<Database> {
   if (db) return db;
+  const wasmPathCandidates = [
+    path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
+    path.join(process.cwd(), '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
+  ];
+  const wasmPath =
+    wasmPathCandidates.find((candidate) => fs.existsSync(candidate)) ?? wasmPathCandidates[0];
+
   const SQL = await initSqlJs({
-    locateFile: (file: string) => path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file),
+    // sql.js can expect a URL-like path in some Node/Windows runtimes.
+    locateFile: (_file: string) => url.pathToFileURL(wasmPath).href,
   });
   const p = getDbPath();
   const dir = path.dirname(p);
